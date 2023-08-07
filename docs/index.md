@@ -1,6 +1,6 @@
 # ell-algo
 
-Add a short description here!
+Ellipsoid Algorithm
 
 
 ## Note
