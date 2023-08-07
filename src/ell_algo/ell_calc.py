@@ -1,7 +1,7 @@
 """This module contains the `EllCalc` class."""
 
 from math import sqrt
-from typing import Tuple
+from typing import Optional, Tuple
 
 from .ell_calc_core import EllCalcCore
 from .ell_config import CutStatus
@@ -12,7 +12,6 @@ class EllCalc:
     for storing constants and configuration options.
 
     Examples:
-        >>> from ell_algo.ell_calc import EllCalc
         >>> calc = EllCalc(3)
     """
 
@@ -24,12 +23,10 @@ class EllCalc:
         """
         The function initializes several variables based on the input value.
 
-        :param ndim: The parameter `ndim` represents an integer value. It is used to initialize the `EllCalc`
-        object
+        :param ndim: The parameter `ndim` represents an integer value.
         :type ndim: int
 
         Examples:
-            >>> from ell_algo.ell_calc import EllCalc
             >>> calc = EllCalc(3)
             >>> calc._n_f
             3.0
@@ -39,36 +36,35 @@ class EllCalc:
 
     def calc_single_or_parallel_deep_cut(
         self, beta, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """Calculate single or parallel deep cut
 
-        The `calc_single_or_parallel_deep_cut` function calculates either a single deep cut or a parallel cut based on
-        the input parameters.
+        The `calc_single_or_parallel_deep_cut` function calculates either a
+        single or parallel deep cut based on the input parameters.
 
         :param beta: The parameter `beta` can be of type `int`, `float`, or a list of two elements
         :param tsq: The `tsq` parameter is a floating-point number that represents the square of the
         tolerance for the ellipsoid algorithm. It is used in the calculations performed by the
-        `calc_single_or_parallel_deep_cut` method
+        `calc_single_or_parallel_deep_cut` method.
         :type tsq: float
         :return: The function `calc_single_or_parallel_deep_cut` returns a tuple containing the following elements:
 
         Examples:
-            >>> from ell_algo.ell_calc import EllCalc
             >>> calc = EllCalc(3)
         """
         if isinstance(beta, (int, float)):
             return self.calc_deep_cut(beta, tsq)
-        elif len(beta) < 2 or not self.use_parallel_cut:  # unlikely
+        if len(beta) < 2 or not self.use_parallel_cut:  # unlikely
             return self.calc_deep_cut(beta[0], tsq)
         return self.calc_parallel_deep_cut(beta[0], beta[1], tsq)
 
     def calc_single_or_parallel_central_cut(
         self, beta, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
-        """single central cut or parallel cut
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
+        """single or parallel central cut
 
-        The function `calc_single_or_parallel_central_cut` calculates either a single central cut or a parallel cut
-        based on the input parameters.
+        The function `calc_single_or_parallel_central_cut` calculates either a
+        single or parallel central cut based on the input parameters.
 
         :param beta: The parameter `beta` is of type `_type_` and represents some value. The specific
         details of its purpose and usage are not provided in the code snippet
@@ -81,12 +77,11 @@ class EllCalc:
         4. float: The calculated value.
 
         Examples:
-            >>> from ell_algo.ell_calc import EllCalc
             >>> calc = EllCalc(4)
             >>> calc.calc_single_or_parallel_central_cut([0, 0.11], 0.01)
             (<CutStatus.Success: 0>, (0.020000000000000004, 0.4, 1.0666666666666667))
             >>> calc.calc_single_or_parallel_central_cut([0, -1], 0.01)
-            (<CutStatus.NoSoln: 1>, (0.0, 0.0, 0.0))
+            (<CutStatus.NoSoln: 1>, None)
         """
         if isinstance(beta, (int, float)) or len(beta) < 2 or not self.use_parallel_cut:
             return (CutStatus.Success, self._helper.calc_central_cut(sqrt(tsq)))
@@ -98,7 +93,7 @@ class EllCalc:
     #             ⎝                    ╱     ╱      ⎠
     def calc_parallel_deep_cut(
         self, beta0: float, beta1: float, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """parallel deep cut
 
         The function `calc_parallel_deep_cut` calculates the parallel deep cut based on the given parameters.
@@ -109,12 +104,10 @@ class EllCalc:
         :type beta1: float
         :param tsq: tsq is a float representing the value of tsq
         :type tsq: float
-        :return: The function `calc_parallel` returns a tuple of type `Tuple[CutStatus, Tuple[float, float, float]]`.
+        :return: The function `calc_parallel` returns a tuple of type `Tuple[CutStatus, Optional[Tuple[float, float, float]]]`.
         """
         if beta1 < beta0:
-            return (CutStatus.NoSoln, (0.0, 0.0, 0.0))  # no sol'n
-        # if beta0 == 0.0:
-        #     return self.calc_parallel_central_cut(beta1)
+            return (CutStatus.NoSoln, None)  # no sol'n
         if beta1 > 0.0 and tsq < beta1 * beta1:
             return self.calc_deep_cut(beta0, tsq)
         return (
@@ -124,7 +117,7 @@ class EllCalc:
 
     def calc_parallel_central_cut(
         self, beta1: float, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """Parallel central cut
 
         The function `calc_parallel_central_cut` calculates the parallel central cut for given values of `beta1` and
@@ -139,22 +132,21 @@ class EllCalc:
         `float`, `float`.
 
         Examples:
-            >>> from ell_algo.ell_calc import EllCalc
             >>> calc = EllCalc(4)
             >>> calc.calc_parallel_central_cut(0.11, 0.01)
             (<CutStatus.Success: 0>, (0.020000000000000004, 0.4, 1.0666666666666667))
             >>> calc.calc_parallel_central_cut(-1.0, 0.01)
-            (<CutStatus.NoSoln: 1>, (0.0, 0.0, 0.0))
+            (<CutStatus.NoSoln: 1>, None)
         """
         if beta1 < 0.0:
-            return (CutStatus.NoSoln, (0.0, 0.0, 0.0))  # no sol'n
+            return (CutStatus.NoSoln, None)  # no sol'n
         if tsq < beta1 * beta1 or not self.use_parallel_cut:
             return (CutStatus.Success, self._helper.calc_central_cut(sqrt(tsq)))
         return (CutStatus.Success, self._helper.calc_parallel_central_cut(beta1, tsq))
 
     def calc_deep_cut(
         self, beta: float, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """Deep Cut
 
         The function calculates the deep cut based on the given beta and tsq values.
@@ -166,23 +158,22 @@ class EllCalc:
         :return: The function `calc_deep_cut` returns a tuple of four values: `CutStatus`, `float`, `float`, `float`.
 
         Examples:
-            >>> from ell_algo.ell_calc import EllCalc
             >>> calc = EllCalc(3)
             >>> calc.calc_deep_cut(1.0, 4.0)
             (<CutStatus.Success: 0>, (1.25, 0.8333333333333334, 0.84375))
             >>> calc.calc_deep_cut(0.0, 4.0)
             (<CutStatus.Success: 0>, (0.5, 0.5, 1.125))
             >>> calc.calc_deep_cut(1.5, 2.0)
-            (<CutStatus.NoSoln: 1>, (0.0, 0.0, 0.0))
+            (<CutStatus.NoSoln: 1>, None)
         """
         assert beta >= 0.0
         if tsq < beta * beta:
-            return (CutStatus.NoSoln, (0.0, 0.0, 0.0))  # no sol'n
+            return (CutStatus.NoSoln, None)  # no sol'n
         return (CutStatus.Success, self._helper.calc_deep_cut(beta, sqrt(tsq)))
 
     def calc_single_or_parallel_deep_cut_q(
         self, beta, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """single deep cut or parallel cut (discrete)
 
         The function `calc_single_or_parallel_deep_cut_q` calculates the deep cut or parallel cut based on the input
@@ -197,7 +188,7 @@ class EllCalc:
         """
         if isinstance(beta, (int, float)):
             return self.calc_deep_cut_q(beta, tsq)
-        elif len(beta) < 2 or not self.use_parallel_cut:  # unlikely
+        if len(beta) < 2 or not self.use_parallel_cut:  # unlikely
             return self.calc_deep_cut_q(beta[0], tsq)
         return self.calc_parallel_deep_cut_q(beta[0], beta[1], tsq)
 
@@ -208,7 +199,7 @@ class EllCalc:
     #
     def calc_parallel_deep_cut_q(
         self, beta0: float, beta1: float, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """Parallel deep cut (discrete)
 
         The function `calc_parallel_deep_cut_q` calculates the parallel deep cut for a given set of parameters.
@@ -223,19 +214,17 @@ class EllCalc:
         float]`.
         """
         if beta1 < beta0:
-            return (CutStatus.NoSoln, (0.0, 0.0, 0.0))  # no sol'n
-        # if beta0 == 0.0:
-        #     return self.calc_parallel_central_cut(beta1)
+            return (CutStatus.NoSoln, None)  # no sol'n
         if beta1 > 0.0 and tsq < beta1 * beta1:
             return self.calc_deep_cut_q(beta0, tsq)
         if self._n_f * beta0 * beta1 < -tsq:  # for discrete optimization
-            return (CutStatus.NoEffect, (0.0, 0.0, 0.0))  # no effect
+            return (CutStatus.NoEffect, None)  # no effect
         # TODO: check beta0 + beta1 == 0
         return self.calc_parallel_deep_cut(beta0, beta1, tsq)
 
     def calc_deep_cut_q(
         self, beta: float, tsq: float
-    ) -> Tuple[CutStatus, Tuple[float, float, float]]:
+    ) -> Tuple[CutStatus, Optional[Tuple[float, float, float]]]:
         """Deep Cut (discrete)
 
         The function `calc_deep_cut_q` calculates the deep cut for a given beta and tsq value.
@@ -254,15 +243,15 @@ class EllCalc:
             >>> calc.calc_deep_cut_q(0.0, 4.0)
             (<CutStatus.Success: 0>, (0.5, 0.5, 1.125))
             >>> calc.calc_deep_cut_q(1.5, 2.0)
-            (<CutStatus.NoSoln: 1>, (0.0, 0.0, 0.0))
+            (<CutStatus.NoSoln: 1>, None)
             >>> calc.calc_deep_cut_q(-1.5, 4.0)
-            (<CutStatus.NoEffect: 2>, (0.0, 0.0, 0.0))
+            (<CutStatus.NoEffect: 2>, None)
         """
         tau = sqrt(tsq)
         if tau < beta:
-            return (CutStatus.NoSoln, (0.0, 0.0, 0.0))  # no sol'n
+            return (CutStatus.NoSoln, None)  # no sol'n
         if tau <= -self._n_f * beta:
-            return (CutStatus.NoEffect, (0.0, 0.0, 0.0))
+            return (CutStatus.NoEffect, None)
         return (CutStatus.Success, self._helper.calc_deep_cut(beta, tau))
 
 
@@ -270,36 +259,32 @@ if __name__ == "__main__":
     from pytest import approx
 
     ell_calc = EllCalc(4)
-    status, rho, sigma, delta = ell_calc.calc_parallel_deep_cut_q(0.07, 0.03, 0.01)
+    status, result = ell_calc.calc_parallel_deep_cut_q(0.07, 0.03, 0.01)
     assert status == CutStatus.NoSoln
 
-    status, rho, sigma, delta = ell_calc.calc_parallel_deep_cut_q(0.0, 0.05, 0.01)
-    assert status == (CutStatus.Success, rho, sigma, delta)
+    status, result = ell_calc.calc_parallel_deep_cut_q(0.0, 0.05, 0.01)
+    assert status == CutStatus.Success
+    rho, sigma, delta = result
     assert sigma == approx(0.8)
     assert rho == approx(0.02)
     assert delta == approx(1.2)
 
-    status, rho, sigma, delta = ell_calc.calc_parallel_deep_cut_q(0.05, 0.11, 0.01)
-    assert status == (CutStatus.Success, rho, sigma, delta)
+    status, result = ell_calc.calc_parallel_deep_cut_q(0.05, 0.11, 0.01)
+    assert status == CutStatus.Success
+    rho, sigma, delta = result
     assert sigma == approx(0.8)
     assert rho == approx(0.06)
     assert delta == approx(0.8)
 
-    # status, rho, sigma, delta = ell_calc.calc_parallel(-0.07, 0.07)
+    # status, result = ell_calc.calc_parallel(-0.07, 0.07)
     # assert status == CutStatus.NoEffect
 
-    status, rho, sigma, delta = ell_calc.calc_parallel_deep_cut_q(0.01, 0.04, 0.01)
-    assert status == (CutStatus.Success, rho, sigma, delta)
+    status, result = ell_calc.calc_parallel_deep_cut_q(0.01, 0.04, 0.01)
+    assert status == CutStatus.Success
+    rho, sigma, delta = result
     assert sigma == approx(0.928)
     assert rho == approx(0.0232)
     assert delta == approx(1.232)
 
     ell_calc = EllCalc(4)
     assert ell_calc.use_parallel_cut is True
-    assert ell_calc._n_f == 4.0
-    assert ell_calc._half_n == 2.0
-    assert ell_calc._cst0 == 0.2
-    # assert ell_calc._cst1 == approx(16.0 / 15.0)
-    assert ell_calc._cst2 == 0.4
-    assert ell_calc._cst3 == 0.8
-    print(ell_calc._cst1)
