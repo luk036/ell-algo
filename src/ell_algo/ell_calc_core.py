@@ -1,8 +1,17 @@
+"""This module contains the `EllCalcCore` class."""
+
 from math import sqrt
 from typing import Tuple
 
 
 class EllCalcCore:
+    """The `EllCalcCore` class is used for calculating ellipsoid parameters.
+
+    Examples:
+        >>> from ell_algo.ell_calc_core import EllCalcCore
+        >>> calc = EllCalcCore(3)
+    """
+
     _n_f: float
     _half_n: float
     _cst0: float
@@ -10,18 +19,18 @@ class EllCalcCore:
     _cst2: float
     _cst3: float
 
-    def __init__(self, n: int) -> None:
+    def __init__(self, n_f: float) -> None:
         """
         The function initializes several variables based on the input value.
 
-        :param n: The parameter `n` represents an integer value. It is used to initialize the `EllCalcCore`
+        :param n_f: The parameter `n_f` represents a floating point value. It is used to initialize the `EllCalcCore`
         object
-        :type n: int
+        :type n_f: float
 
         Examples:
             >>> calc = EllCalcCore(3)
             >>> calc._n_f
-            3.0
+            3
             >>> calc._half_n
             1.5
             >>> calc._cst0
@@ -33,7 +42,7 @@ class EllCalcCore:
             >>> calc._cst3
             0.75
         """
-        self._n_f = float(n)
+        self._n_f = n_f
         self._half_n = self._n_f / 2.0
         self._cst0 = 1.0 / (self._n_f + 1.0)
         self._cst1 = self._n_f**2 / (self._n_f**2 - 1.0)
