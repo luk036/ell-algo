@@ -11,6 +11,7 @@
 -->
 
 [![Project generated with PyScaffold](https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold)](https://pyscaffold.org/)
+[![Coveralls](https://img.shields.io/coveralls/github/luk036/ell-algo/main.svg)](https://coveralls.io/r/luk036/ell-algo)
 
 # ell-algo
 
