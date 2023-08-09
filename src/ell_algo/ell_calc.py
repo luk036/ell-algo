@@ -264,6 +264,7 @@ if __name__ == "__main__":
 
     status, result = ell_calc.calc_parallel_deep_cut_q(0.0, 0.05, 0.01)
     assert status == CutStatus.Success
+    assert result is not None
     rho, sigma, delta = result
     assert sigma == approx(0.8)
     assert rho == approx(0.02)
@@ -271,6 +272,7 @@ if __name__ == "__main__":
 
     status, result = ell_calc.calc_parallel_deep_cut_q(0.05, 0.11, 0.01)
     assert status == CutStatus.Success
+    assert result is not None
     rho, sigma, delta = result
     assert sigma == approx(0.8)
     assert rho == approx(0.06)
@@ -281,6 +283,7 @@ if __name__ == "__main__":
 
     status, result = ell_calc.calc_parallel_deep_cut_q(0.01, 0.04, 0.01)
     assert status == CutStatus.Success
+    assert result is not None
     rho, sigma, delta = result
     assert sigma == approx(0.928)
     assert rho == approx(0.0232)
