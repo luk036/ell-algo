@@ -23,8 +23,8 @@ class EllCalcCore:
         """
         The function initializes several variables based on the input value.
 
-        :param n_f: The parameter `n_f` represents a floating point value. It is used to initialize the `EllCalcCore`
-        object
+        :param n_f: The parameter `n_f` represents a floating point value. It is used to
+        initialize the `EllCalcCore` object
         :type n_f: float
 
         Examples:
