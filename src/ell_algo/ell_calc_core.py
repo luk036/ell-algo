@@ -8,12 +8,12 @@ class EllCalcCore:
     """The `EllCalcCore` class is used for calculating ellipsoid parameters.
 
     Examples:
-        >>> from ell_algo.ell_calc_core import EllCalcCore
         >>> calc = EllCalcCore(3)
     """
 
     _n_f: float
     _half_n: float
+    _n_plus_1: float
     _cst0: float
     _cst1: float
     _cst2: float
@@ -44,8 +44,10 @@ class EllCalcCore:
         """
         self._n_f = n_f
         self._half_n = self._n_f / 2.0
-        self._cst0 = 1.0 / (self._n_f + 1.0)
-        self._cst1 = self._n_f**2 / (self._n_f**2 - 1.0)
+        self._n_plus_1 = self._n_f + 1.0
+        self._n_sq = self._n_f * self._n_f
+        self._cst0 = 1.0 / self._n_plus_1
+        self._cst1 = self._n_sq / (self._n_sq - 1.0)
         self._cst2 = 2.0 * self._cst0
         self._cst3 = self._n_f * self._cst0
 
@@ -117,9 +119,42 @@ class EllCalcCore:
             (0.5, 0.5, 1.125)
         """
         gamma = tau + self._n_f * beta
+        alpha = beta / tau
         rho = self._cst0 * gamma
         sigma = self._cst2 * gamma / (tau + beta)
-        delta = self._cst1 * (1.0 - (beta / tau) ** 2)
+        delta = self._cst1 * (1.0 - alpha) * (1 + alpha)
+        return (rho, sigma, delta)
+
+    def calc_parallel_central_cut(
+        self, beta1: float, tsq: float
+    ) -> Tuple[float, float, float]:
+        """Calculate Parallel Central Cut
+
+        The function `calc_parallel_central_cut` calculates the parallel central cut for given values of `beta1` and
+        `tsq`.
+
+        :param beta1: The parameter `beta1` represents a float value. It is used in the calculation of the
+        central cut
+        :type beta1: float
+        :param tsq: The parameter `tsq` represents the square of a value
+        :type tsq: float
+        :return: The function `calc_parallel_central_cut` returns a tuple of four values: `CutStatus`, `float`,
+        `float`, `float`.
+
+        Examples:
+            >>> calc = EllCalcCore(4)
+            >>> calc.calc_parallel_central_cut(0.11, 0.01)
+            (0.01897790039191521, 0.3450527343984584, 1.0549907942519101)
+        """
+        b1sq = beta1 * beta1
+        a1sq = b1sq / tsq
+        temp = self._half_n * a1sq
+        mu_plus_1 = temp + sqrt(1.0 - a1sq + temp * temp)
+        mu_plus_2 = mu_plus_1 + 1.0
+        rho = beta1 / mu_plus_2
+        sigma = 2.0 / mu_plus_2
+        temp2 = self._n_f * mu_plus_1
+        delta = temp2 / (temp2 - 1.0)
         return (rho, sigma, delta)
 
     #                        __________________________
@@ -151,7 +186,7 @@ class EllCalcCore:
     #                    ⎛ 2    ⎞    2
     #                    ⎝n  - 1⎠ ⋅ τ
     #
-    def calc_parallel_central_cut(
+    def calc_parallel_central_cut_old(
         self, beta1: float, tsq: float
     ) -> Tuple[float, float, float]:
         """Calculate Parallel Central Cut
@@ -169,7 +204,7 @@ class EllCalcCore:
 
         Examples:
             >>> calc = EllCalcCore(4)
-            >>> calc.calc_parallel_central_cut(0.11, 0.01)
+            >>> calc.calc_parallel_central_cut_old(0.11, 0.01)
             (0.018977900391915218, 0.3450527343984585, 1.0549907942519101)
         """
         b1sq = beta1 * beta1
@@ -181,6 +216,43 @@ class EllCalcCore:
         sigma = self._cst3 + self._cst2 * (1.0 - xi) / a1sq
         rho = sigma * beta1 / 2.0
         delta = self._cst1 * (1.0 - a1sq / 2.0 + xi / self._n_f)
+        return (rho, sigma, delta)
+
+    def calc_parallel_deep_cut(
+        self, beta0: float, beta1: float, tsq: float
+    ) -> Tuple[float, float, float]:
+        """Calculation Parallel Deep Cut
+
+        The `calc_parallel_deep_cut` function calculates various values based on the input parameters and returns
+        them as a tuple.
+
+        :param beta0: The parameter `beta0` represents a float value
+        :type beta0: float
+        :param beta1: The parameter `beta1` represents a float value
+        :type beta1: float
+        :param tsq: tsq is a float representing the square of the value t
+        :type tsq: float
+        :return: a tuple with three elements.
+
+        Examples:
+            >>> calc = EllCalcCore(4)
+            >>> calc.calc_parallel_deep_cut(0.11, 0.01, 0.01)
+            (0.027228509068282114, 0.45380848447136857, 1.0443438549074862)
+            >>> calc.calc_parallel_deep_cut(-0.25, 0.25, 1.0)
+            (0.0, 0.8, 1.25)
+        """
+        b0b1 = beta0 * beta1
+        bsum = beta0 + beta1
+        bsumsq = bsum * bsum
+        temp = self._half_n * bsumsq
+        a = tsq + self._n_f * b0b1
+        h = tsq + b0b1 + self._half_n * bsumsq
+        c = self._n_plus_1 * bsumsq  # (n + 1) * bsumsq
+        mu_plus_2 = (h + sqrt(h * h - a * c)) / a
+        mu = mu_plus_2 - 2.0
+        rho = bsum / mu_plus_2
+        sigma = 2.0 / mu_plus_2
+        delta = 1.0 + (-2.0 * b0b1 + bsum * rho) / mu / tsq
         return (rho, sigma, delta)
 
     #                  2    2
@@ -219,7 +291,7 @@ class EllCalcCore:
     #                   ⎛ 2    ⎞    2
     #                   ⎝n  - 1⎠ ⋅ τ
     #
-    def calc_parallel_deep_cut(
+    def calc_parallel_deep_cut_old(
         self, beta0: float, beta1: float, tsq: float
     ) -> Tuple[float, float, float]:
         """Calculation Parallel Deep Cut
@@ -237,7 +309,7 @@ class EllCalcCore:
 
         Examples:
             >>> calc = EllCalcCore(4)
-            >>> calc.calc_parallel_deep_cut(0.11, 0.01, 0.01)
+            >>> calc.calc_parallel_deep_cut_old(0.11, 0.01, 0.01)
             (0.02722850906828212, 0.4538084844713687, 1.0443438549074862)
         """
         b0b1 = beta0 * beta1
@@ -246,7 +318,7 @@ class EllCalcCore:
         t0 = tsq - b0sq
         t1 = tsq - b1sq
         xi = sqrt(t0 * t1 + (self._half_n * (b1sq - b0sq)) ** 2)
-        bsumsq = b0sq + 2.0 * b0b1 + b1sq
+        bsumsq = (beta0 + beta1) ** 2
         sigma = self._cst3 + self._cst2 * (tsq + b0b1 - xi) / bsumsq
         rho = sigma * (beta0 + beta1) / 2.0
         delta = self._cst1 * ((t0 + t1) / 2.0 + xi / self._n_f) / tsq
