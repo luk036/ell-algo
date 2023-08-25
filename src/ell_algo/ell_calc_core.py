@@ -248,11 +248,13 @@ class EllCalcCore:
         a = tsq + self._n_f * b0b1
         h = tsq + b0b1 + self._half_n * bsumsq
         c = self._n_plus_1 * bsumsq  # (n + 1) * bsumsq
-        mu_plus_2 = (h + sqrt(h * h - a * c)) / a
-        mu = mu_plus_2 - 2.0
-        rho = bsum / mu_plus_2
-        sigma = 2.0 / mu_plus_2
-        delta = 1.0 + (-2.0 * b0b1 + bsum * rho) / mu / tsq
+        temp2 = h + sqrt(h * h - a * c)
+        inv_mu_plus_2 = a / temp2
+        # mu = temp2 / a - 2.0
+        inv_mu = a / (temp2 - 2.0 * a)
+        rho = bsum * inv_mu_plus_2
+        sigma = 2.0 * inv_mu_plus_2
+        delta = 1.0 + (-2.0 * b0b1 + bsumsq * inv_mu_plus_2) * inv_mu / tsq
         return (rho, sigma, delta)
 
     #                  2    2
