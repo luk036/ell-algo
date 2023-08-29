@@ -278,9 +278,6 @@ if __name__ == "__main__":
     assert rho == approx(0.06)
     assert delta == approx(0.8)
 
-    # status, result = ell_calc.calc_parallel(-0.07, 0.07)
-    # assert status == CutStatus.NoEffect
-
     status, result = ell_calc.calc_parallel_deep_cut_q(0.01, 0.04, 0.01)
     assert status == CutStatus.Success
     assert result is not None
